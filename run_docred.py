@@ -10,20 +10,19 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
-
 from transformers import (
     WEIGHTS_NAME,
     AdamW,
     AutoConfig,
     AutoTokenizer,
     get_constant_schedule_with_warmup,
-    get_linear_schedule_with_warmup
+    get_linear_schedule_with_warmup,
 )
 
-from dataset import docred_convert_examples_to_features as convert_examples_to_features
 from dataset import DocREDProcessor
+from dataset import docred_convert_examples_to_features as convert_examples_to_features
+from model import BertForDocRED, RobertaForDocRED
 
-from model import (BertForDocRED, RobertaForDocRED)
 logger = logging.getLogger(__name__)
 
 
@@ -674,6 +673,8 @@ def main():
     if args.local_rank == 0:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 
+    print("here 1")
+
     # Training
     if args.do_train:
         if args.local_rank not in [-1, 0]:
@@ -692,11 +693,13 @@ def main():
                                           with_naive_feature=with_naive_feature,
                                           entity_structure=args.entity_structure,
                                           )
+        print("here 2")
         if args.local_rank == 0:
             torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
         model.to(args.device)
         logger.info("Training parameters %s", args)
         train_dataset = load_and_cache_examples(args, tokenizer, evaluate=False)
+        print("here 3")
         global_step, tr_loss = train(args, train_dataset, model, tokenizer)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
